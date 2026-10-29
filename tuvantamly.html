@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindShield AI - Hệ Thống Tư Vấn Tâm Lý Học Đường</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Lexend', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .breath-animation {
+            animation: breathe 16s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            25% { transform: scale(1.4); opacity: 1; } /* Hít vào 4s */
+            43.75% { transform: scale(1.4); opacity: 0.9; } /* Giữ 7s */
+            93.75% { transform: scale(1); opacity: 0.6; } /* Thở ra 8s */
+        }
+        .webcam-overlay {
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(13,148,136,0.2) 100%);
+        }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: #14b8a6;
+            position: absolute;
+            animation: scan 2.5s infinite linear;
+            box-shadow: 0 0 10px #14b8a6;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- HEADER & NAVIGATION -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                        <i class="fa-solid font-bold fa-shield-heart text-2xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold tracking-tight text-slate-900 block">MindShield <span class="text-brand-600">AI</span></span>
+                        <span class="text-xs text-slate-500 font-medium">Tư Vấn Tâm Lý Học Đường Ẩn Danh</span>
+                    </div>
+                </div>
+
+                <!-- Session Student Code Badge & Real Visit Counter -->
+                <div class="hidden md:flex items-center gap-4">
+                    <!-- Mã học sinh tự động -->
+                    <div class="bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-brand-600"></i>
+                        <span class="text-xs font-semibold text-slate-600">Mã kết nối của bạn:</span>
+                        <span id="headerStudentCode" class="font-mono font-bold text-brand-700 bg-white px-2 py-0.5 rounded border border-brand-200 text-sm">#HS-00000</span>
+                    </div>
+
+                    <!-- Lượt truy cập thực tế -->
+                    <div class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-semibold text-slate-600">
+                        <i class="fa-solid fa-chart-line text-emerald-600"></i>
+                        <span>Lượt truy cập:</span>
+                        <span id="visitCount" class="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-sm">--</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex space-x-1 sm:space-x-4 border-t border-slate-100 pt-2 pb-2 overflow-x-auto text-sm font-medium">
+                <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="tab-btn px-4 py-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i>Trang Tổng Quan
+                </button>
+                <button onclick="switchTab('tab-emotion')" id="btn-tab-emotion" class="tab-btn px-4 py-2 rounded-lg text-brand-600 bg-brand-50 font-semibold transition whitespace-nowrap">
+                    <i class="fa-solid fa-face-smile mr-1.5"></i>1. AI Quét Cảm Xúc
+                </button>
+                <button onclick="switchTab('tab-chat')" id="btn-tab-chat" class="tab-btn px-4 py-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    <i class="fa-solid fa-comments mr-1.5"></i>2. Trò Chuyện Bật Mã
+                </button>
+                <button onclick="switchTab('tab-booking')" id="btn-tab-booking" class="tab-btn px-4 py-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    <i class="fa-solid fa-calendar-check mr-1.5"></i>3. Lịch Hẹn Trực Tiếp
+                </button>
+                <button onclick="switchTab('tab-equality')" id="btn-tab-equality" class="tab-btn px-4 py-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    <i class="fa-solid fa-scale-balanced mr-1.5"></i>4. Bình Đẳng Giới
+                </button>
+                <button onclick="switchTab('tab-dass21')" id="btn-tab-dass21" class="tab-btn px-4 py-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition whitespace-nowrap">
+                    <i class="fa-solid fa-clipboard-question mr-1.5"></i>5. Đánh Giá DASS-21
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- TAB 0: TRANG TỔNG QUAN (DASHBOARD) -->
+        <section id="tab-dashboard" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-brand-600"></i> Báo Cáo Tổng Quan Hệ Thống Tâm Lý
+                </h2>
+                <p class="text-sm text-slate-500 mb-6">Thống kê tổng hợp tình trạng sức khỏe tâm lý học sinh toàn trường (Cập nhật thời gian thực)</p>
+
+                <!-- Thống kê chỉ số nhanh -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tổng Lượt Truy Cập Thực Tế</div>
+                        <div id="dash-access-count" class="text-2xl font-bold text-slate-800">--</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                        <div class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1">Mức Độ Xanh (Tốt)</div>
+                        <div class="text-2xl font-bold text-emerald-600">68% <span class="text-xs font-normal text-slate-500">(312 hs)</span></div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                        <div class="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">Mức Độ Vàng (Cần Chú Ý)</div>
+                        <div class="text-2xl font-bold text-amber-600">22% <span class="text-xs font-normal text-slate-500">(101 hs)</span></div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-rose-50 border border-rose-200">
+                        <div class="text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">Mức Độ Đỏ (Cảnh Báo Cao)</div>
+                        <div class="text-2xl font-bold text-rose-600">10% <span class="text-xs font-normal text-slate-500">(45 hs)</span></div>
+                    </div>
+                </div>
+
+                <!-- Tiến trình trạng thái -->
+                <div class="mb-8">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3">Tỷ Lệ Phân Loại Trạng Thái Tâm Lý</h3>
+                    <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex">
+                        <div class="bg-emerald-500 h-full" style="width: 68%" title="Xanh: 68%"></div>
+                        <div class="bg-amber-500 h-full" style="width: 22%" title="Vàng: 22%"></div>
+                        <div class="bg-rose-500 h-full" style="width: 10%" title="Đỏ: 10%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-500 mt-2">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-emerald-500 text-[10px]"></i> Xanh: Ổn định</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-amber-500 text-[10px]"></i> Vàng: Căng thẳng vừa</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-rose-500 text-[10px]"></i> Đỏ: Căng thẳng cao</span>
+                    </div>
+                </div>
+
+                <!-- Nhật ký cảnh báo gần nhất -->
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3">Cảnh Báo Mới Gửi Về Tổ Tư Vấn</h3>
+                    <div class="space-y-2">
+                        <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-amber-200 text-amber-800 font-bold">MỨC VÀNG</span>
+                                <span class="font-mono font-semibold text-slate-700">Mã #HS-87962</span>
+                                <span class="text-slate-500">- Phát hiện mức độ căng thẳng cao từ AI Face Scan</span>
+                            </div>
+                            <span class="text-slate-400">10 phút trước</span>
+                        </div>
+                        <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-rose-200 text-rose-800 font-bold">MỨC ĐỎ</span>
+                                <span class="font-mono font-semibold text-slate-700">Mã #HS-41029</span>
+                                <span class="text-slate-500">- Kết quả kiểm tra DASS-21 ở mức Trầm Cảm Cao</span>
+                            </div>
+                            <span class="text-slate-400">1 giờ trước</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 1: PHẦN 1 - AI QUÉT CẢM XÚC -->
+        <section id="tab-emotion" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="max-w-3xl mx-auto text-center mb-8">
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-200">Công Nghệ AI Nhận Diện</span>
+                    <h2 class="text-2xl font-bold text-slate-900 mt-2">Nhận Diện Khuôn Mặt & Đánh Giá Trạng Thái Tâm Lý</h2>
+                    <p class="text-slate-500 text-sm mt-1">Hệ thống phân tích biểu cảm khuôn mặt qua camera (Hoàn toàn ẩn danh, không lưu trữ hình ảnh).</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <!-- Khung Camera quét -->
+                    <div class="space-y-4">
+                        <div class="relative bg-slate-900 rounded-2xl overflow-hidden aspect-video shadow-inner border border-slate-800 flex items-center justify-center">
+                            <video id="webcam" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+                            
+                            <!-- Placeholder khi chưa bật camera -->
+                            <div id="cameraPlaceholder" class="text-center p-6">
+                                <i class="fa-solid fa-camera-retro text-4xl text-slate-600 mb-3 block"></i>
+                                <p class="text-xs text-slate-400 mb-4">Vui lòng cấp quyền truy cập camera để thực hiện nhận diện khuôn mặt</p>
+                                <button onclick="startCamera()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition shadow-md">
+                                    <i class="fa-solid fa-power-off mr-1.5"></i>Bật Camera Quét
+                                </button>
+                            </div>
+
+                            <!-- Overlay Quét -->
+                            <div id="scanOverlay" class="absolute inset-0 webcam-overlay hidden pointer-events-none">
+                                <div class="scan-line"></div>
+                                <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> REC AI SCANNING
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button id="btnScan" onclick="analyzeEmotion()" disabled class="flex-1 py-2.5 bg-slate-200 text-slate-400 font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Phân Tích Cảm Xúc Ngay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Kết quả đánh giá -->
+                    <div class="space-y-4">
+                        <div class="border border-slate-200 rounded-2xl p-5 bg-slate-50/50">
+                            <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-square-poll-vertical text-brand-600"></i> Kết Quả Đánh Giá Hiện Tại
+                            </h3>
+
+                            <!-- Trạng thái ẩn khi chưa quét -->
+                            <div id="resultPlaceholder" class="py-12 text-center text-slate-400 text-xs">
+                                Nhấn "Phân Tích Cảm Xúc Ngay" để xem điểm số tâm lý của bạn.
+                            </div>
+
+                            <!-- Trạng thái hiện sau khi quét -->
+                            <div id="resultContent" class="hidden space-y-4">
+                                <!-- Thẻ cấp độ màu -->
+                                <div id="statusCard" class="p-4 rounded-xl border flex items-center justify-between bg-white shadow-sm">
+                                    <div>
+                                        <span id="statusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold uppercase">Mức Xanh</span>
+                                        <h4 id="statusTitle" class="font-bold text-slate-800 text-lg mt-1">Trạng thái Bình Thường / Vui Vẻ</h4>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-2xl font-black text-slate-800" id="statusScore">85/100</div>
+                                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Điểm Cân Bằng</div>
+                                    </div>
+                                </div>
+
+                                <!-- Mô tả chi tiết -->
+                                <div class="p-3.5 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed" id="statusDesc">
+                                    Tâm trạng của bạn đang ở mức rất cân bằng và tích cực. Hãy tiếp tục duy trì lối sống lành mạnh này nhé!
+                                </div>
+
+                                <!-- Khung tự động cảnh báo gửi thầy cô (khi ở mức Vàng/Đỏ) -->
+                                <div id="teacherAlertBox" class="hidden p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 space-y-2">
+                                    <div class="font-bold flex items-center gap-1.5 text-amber-800">
+                                        <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Thông Báo Tự Động Đã Đưa Vào Hệ Thống
+                                    </div>
+                                    <p>Do chỉ số ở mức <span class="font-bold text-amber-700">Cần Chú Ý (Mức Vàng)</span>, hệ thống đã tự động chuyển tín hiệu mã định danh <span id="alertStudentCode" class="font-mono font-bold">#HS-00000</span> tới Tổ Tư Vấn Tâm Lý Nhà Trường để nhận sự hỗ trợ kịp thời.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: PHẦN 2 - TRÒ CHUYỆN VỚI TỔ TÂM LÝ & BÀI TẬP HÍT THỞ -->
+        <section id="tab-chat" class="tab-content hidden space-y-6">
+            <!-- Nút chọn Học sinh / Giáo viên -->
+            <div class="flex justify-center gap-3 mb-2">
+                <button onclick="setRole('student')" id="roleBtnStudent" class="px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm border transition flex items-center gap-2 bg-brand-600 text-white border-brand-600">
+                    <i class="fa-solid fa-user-graduate"></i> Dành Cho Học Sinh (Mã Tự Động)
+                </button>
+                <button onclick="setRole('teacher')" id="roleBtnTeacher" class="px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm border transition flex items-center gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-50">
+                    <i class="fa-solid fa-chalkboard-user"></i> Dành Cho Giáo Viên Tư Vấn
+                </button>
+            </div>
+
+            <!-- CHẾ ĐỘ HỌC SINH -->
+            <div id="studentChatSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Cột Chat -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[520px]">
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 rounded-t-2xl">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">Hộp Nhắn Tin Khẩn Cấp</h3>
+                                <p class="text-xs text-slate-500">Mã kết nối của bạn: <span id="chatStudentCode" class="font-mono font-bold text-brand-600">#HS-00000</span></p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Sẵn sàng lắng nghe
+                        </span>
+                    </div>
+
+                    <!-- Chat Box Body -->
+                    <div id="chatMessages" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/30 text-xs">
+                        <div class="bg-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none max-w-[80%] leading-relaxed">
+                            Xin chào! Mã trò chuyện ẩn danh của bạn đã được gắn tự động. Hãy chia sẻ bất kỳ điều gì bạn đang lắng lo, tin nhắn của bạn sẽ gửi bảo mật tới hòm thư Tổ Tư Vấn.
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="p-3 border-t border-slate-100 bg-white rounded-b-2xl">
+                        <form onsubmit="sendStudentMessage(event)" class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="Nhập tâm sự của bạn tại đây..." class="flex-grow text-xs border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+                            <button type="submit" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shadow-md shadow-brand-500/20">
+                                <span>Gửi</span> <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Cột Gợi ý Hít thở & Thư giãn khi mức Vàng -->
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-br from-brand-600 to-teal-700 text-white p-5 rounded-2xl shadow-sm text-center">
+                        <h4 class="font-bold text-sm mb-1 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-wind"></i> Bài Tập Hít Thở Cân Bằng (4-7-8)
+                        </h4>
+                        <p class="text-[11px] text-teal-100 mb-4">Giúp hạ nhịp tim và ổn định cảm xúc ngay lập tức</p>
+
+                        <!-- Vòng tròn hiệu ứng hít thở -->
+                        <div class="relative w-28 h-28 mx-auto my-4 flex items-center justify-center">
+                            <div class="absolute inset-0 rounded-full bg-white/20 breath-animation"></div>
+                            <div class="w-20 h-20 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center font-bold text-xs">
+                                Thả Lỏng
+                            </div>
+                        </div>
+
+                        <p class="text-[10px] text-teal-200 italic">Hít vào 4s - Giữ 7s - Thở ra 8s</p>
+                    </div>
+
+                    <!-- Video / Âm thanh hỗ trợ thư giãn -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-play text-brand-600"></i> Video Nhạc Thư Giãn Tự Nhiên
+                        </h4>
+                        <div class="aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                            <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/5qap5aO4i9A?controls=1" title="Relaxing Music" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHẾ ĐỘ GIÁO VIÊN (CẦN MẬT KHẨU) -->
+            <div id="teacherChatSection" class="hidden max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-slate-100 rounded-full text-slate-700 flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-base">Đăng Nhập Dành Cho Giáo Viên Tư Vấn</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Xác thực quyền hạn để truy cập hòm thư nhắn tin của học sinh</p>
+                </div>
+
+                <div id="teacherLoginForm" class="space-y-3 pt-2">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 block mb-1">Tên Giáo Viên</label>
+                        <input type="text" id="teacherName" placeholder="Nhập họ và tên..." class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 block mb-1">Mật Khẩu Xác Thực</label>
+                        <input type="password" id="teacherPass" placeholder="Nhập mật khẩu (Mật khẩu demo: 123456)..." class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button onclick="loginTeacher()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">
+                        Xác Nhận Đăng Nhập
+                    </button>
+                </div>
+
+                <!-- Khung sau khi giáo viên đăng nhập thành công -->
+                <div id="teacherWorkArea" class="hidden space-y-4 border-t border-slate-100 pt-4">
+                    <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex justify-between items-center">
+                        <span>Xin chào Giáo viên: <strong id="displayTeacherName">--</strong></span>
+                        <button onclick="logoutTeacher()" class="text-[10px] text-rose-600 underline font-semibold">Đăng xuất</button>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-slate-700 block">Điền Mã Học Sinh Cần Kết Nối (Ví dụ: #HS-87962)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="inputConnectCode" placeholder="#HS-xxxxx" class="flex-grow font-mono text-xs border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500 uppercase">
+                            <button onclick="teacherConnectStudent()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition">
+                                Mở Chat
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="teacherChatDisplay" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl h-48 overflow-y-auto text-xs space-y-2">
+                        <div class="text-slate-400 text-center text-[11px] italic">Đã kết nối an toàn với phiên chat học sinh.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PHẦN 3 - ĐẶT LỊCH HẸN TRỰC TIẾP -->
+        <section id="tab-booking" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="max-w-2xl mx-auto text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900">Đặt Lịch Hẹn Gặp Trực Tiếp</h2>
+                    <p class="text-slate-500 text-sm mt-1">Chọn chuyên gia tư vấn tâm lý và khoảng thời gian phù hợp với bạn.</p>
+                </div>
+
+                <div class="max-w-xl mx-auto space-y-4 bg-slate-50/60 p-6 rounded-2xl border border-slate-200">
+                    <form onsubmit="submitBooking(event)" class="space-y-4">
+                        <!-- Chọn giáo viên tư vấn (Xóa ảnh đại diện) -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Chọn Chuyên Gia / Giáo Viên Tư Vấn</label>
+                            <select id="bookingTeacher" class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-500">
+                                <option value="Cô Hồng Yến - Giáo Viên Dạy Ngữ Văn">Cô Hồng Yến - Giáo Viên Dạy Ngữ Văn</option>
+                                <option value="Thầy Minh Toàn - Chuyên Tư vấn Tuổi Mới Lớn">Thầy Minh Toàn - Chuyên Tư vấn Tuổi Mới Lớn</option>
+                                <option value="Thầy Duy Linh - Cố vấn Tâm Lý & Kỹ năng sống">Thầy Duy Linh - Cố vấn Tâm Lý & Kỹ năng sống</option>
+                            </select>
+                        </div>
+
+                        <!-- Mã học sinh (Tự điền ẩn danh) -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Mã Xác Nhận Học Sinh</label>
+                            <input type="text" id="bookingStudentCode" readonly class="w-full font-mono text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 text-slate-600 font-bold">
+                        </div>
+
+                        <!-- Chọn ngày & giờ -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Chọn Ngày Gặp</label>
+                                <input type="date" required id="bookingDate" class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Chọn Giờ Gặp</label>
+                                <select id="bookingTime" class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-500">
+                                    <option value="08:00 - 09:00 (Buổi sáng)">08:00 - 09:00 (Buổi sáng)</option>
+                                    <option value="09:30 - 10:30 (Buổi sáng)">09:30 - 10:30 (Buổi sáng)</option>
+                                    <option value="14:00 - 15:00 (Buổi chiều)">14:00 - 15:00 (Buổi chiều)</option>
+                                    <option value="15:30 - 16:30 (Buổi chiều)">15:30 - 16:30 (Buổi chiều)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-brand-500/20">
+                            <i class="fa-solid fa-calendar-check mr-1.5"></i> Xác Nhận Đặt Lịch Hẹn
+                        </button>
+                    </form>
+
+                    <!-- Thông báo sau khi đặt thành công -->
+                    <div id="bookingSuccessAlert" class="hidden p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 space-y-1">
+                        <div class="font-bold text-emerald-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check text-emerald-600"></i> Đặt Lịch Hẹn Thành Công!
+                        </div>
+                        <p>Mã cuộc hẹn của bạn là <span id="bookingCodeDisplay" class="font-mono font-bold">#LICH-0000</span>. Hãy đến phòng Tư vấn tâm lý theo thời gian đã chọn nhé.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PHẦN 4 - BÌNH ĐẲNG GIỚI TÍNH -->
+        <section id="tab-equality" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="max-w-2xl mx-auto text-center mb-8">
+                    <span class="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">Tôn Trọng & Tự Do</span>
+                    <h2 class="text-2xl font-bold text-slate-900 mt-2">Bình Đẳng Giới & Yêu Thương Bản Thân</h2>
+                    <p class="text-slate-500 text-sm mt-1">Mọi cá thể đều duy nhất, bình đẳng và đáng được trân trọng.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Thẻ Lời khuyên 1 -->
+                    <div class="bg-purple-50/50 border border-purple-100 p-5 rounded-2xl space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">Phá Bỏ Định Kiến Giới</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Màu sắc, nghề nghiệp hay cảm xúc không có giới tính. Nam giới hoàn toàn có quyền khóc và thể hiện sự yếu mềm; nữ giới hoàn toàn có thể mạnh mẽ và dẫn đầu.
+                        </p>
+                    </div>
+
+                    <!-- Thẻ Lời khuyên 2 -->
+                    <div class="bg-teal-50/50 border border-teal-100 p-5 rounded-2xl space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-hands-holding-child"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">Tôn Trọng Sự Khác Biệt</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Dù bạn là ai, thuộc giới tính hay xu hướng nào, giá trị bản thân bạn nằm ở trí tuệ, lòng nhân ái và cách bạn đóng góp cho cộng đồng.
+                        </p>
+                    </div>
+
+                    <!-- Thẻ Lời khuyên 3 -->
+                    <div class="bg-rose-50/50 border border-rose-100 p-5 rounded-2xl space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-shield-cat"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">An Toàn & Bảo Vệ Ranh Giới</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Học cách nói "Không" trước những hành vi xâm phạm ranh giới cá nhân. Bạn luôn có quyền tự chủ đối với cơ thể và tâm trí của mình.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Video truyền cảm hứng -->
+                <div class="mt-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-film text-purple-600"></i> Media Động Viên & Phim Ngắn Thông Điệp
+                    </h3>
+                    <div class="aspect-video max-w-2xl mx-auto rounded-2xl overflow-hidden bg-black shadow-md">
+                        <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/v_S1zGg9m60" title="Gender Equality" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: PHẦN 5 - BÀI KIỂM TRA DASS-21 -->
+        <section id="tab-dass21" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="max-w-2xl mx-auto text-center mb-8">
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-200">Tiêu Chuẩn Đánh Giá</span>
+                    <h2 class="text-2xl font-bold text-slate-900 mt-2">Thang Đánh Giá Tâm Lý DASS-21</h2>
+                    <p class="text-slate-500 text-sm mt-1">Đánh giá mức độ Trầm Cảm - Lo Âm - Căng Thẳng trong tuần qua.</p>
+                </div>
+
+                <form onsubmit="calculateDASS21(event)" class="max-w-3xl mx-auto space-y-6">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-600 mb-4">
+                        <strong>Hướng dẫn:</strong> Hãy đọc từng câu và chọn mức độ phù hợp nhất với bạn trong <strong>1 tuần qua</strong>:<br>
+                        0 = Không đúng với tôi chút nào | 1 = Đúng với tôi một phần | 2 = Đúng với tôi phần nhiều | 3 = Hoàn toàn đúng
+                    </div>
+
+                    <!-- Danh sách câu hỏi DASS-21 mẫu đại diện -->
+                    <div class="space-y-4 text-xs" id="dassQuestions">
+                        <!-- Q1 -->
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                            <p class="font-semibold text-slate-800">1. Tôi thấy khó mà thư giãn được</p>
+                            <div class="flex gap-4 text-slate-600">
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q1" value="0" checked> 0</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q1" value="1"> 1</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q1" value="2"> 2</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q1" value="3"> 3</label>
+                            </div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                            <p class="font-semibold text-slate-800">2. Tôi bị khô miệng hoặc hụt hơi mà không vì lý do vận động</p>
+                            <div class="flex gap-4 text-slate-600">
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q2" value="0" checked> 0</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q2" value="1"> 1</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q2" value="2"> 2</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q2" value="3"> 3</label>
+                            </div>
+                        </div>
+
+                        <!-- Q3 -->
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                            <p class="font-semibold text-slate-800">3. Tôi không thấy có chút cảm xúc tích cực nào</p>
+                            <div class="flex gap-4 text-slate-600">
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q3" value="0" checked> 0</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q3" value="1"> 1</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q3" value="2"> 2</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q3" value="3"> 3</label>
+                            </div>
+                        </div>
+
+                        <!-- Q4 -->
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                            <p class="font-semibold text-slate-800">4. Tôi thấy dễ bị hay dỗi, gắt gỏng hoặc hoảng sợ</p>
+                            <div class="flex gap-4 text-slate-600">
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q4" value="0" checked> 0</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q4" value="1"> 1</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q4" value="2"> 2</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q4" value="3"> 3</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-brand-500/20">
+                        Chấm Điểm & Xem Kết Quả DASS-21
+                    </button>
+                </form>
+
+                <!-- Kết quả DASS-21 -->
+                <div id="dassResult" class="hidden max-w-3xl mx-auto mt-6 p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-square-poll-horizontal text-brand-600"></i> Bảng Đánh Giá Kết Quả DASS-21
+                    </h3>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="p-3 bg-white rounded-xl border border-slate-200">
+                            <div class="text-[10px] text-slate-400 font-semibold uppercase">Trầm Cảm</div>
+                            <div id="dassDepression" class="text-base font-bold text-emerald-600 mt-1">Bình thường</div>
+                        </div>
+                        <div class="p-3 bg-white rounded-xl border border-slate-200">
+                            <div class="text-[10px] text-slate-400 font-semibold uppercase">Lo Âm</div>
+                            <div id="dassAnxiety" class="text-base font-bold text-emerald-600 mt-1">Bình thường</div>
+                        </div>
+                        <div class="p-3 bg-white rounded-xl border border-slate-200">
+                            <div class="text-[10px] text-slate-400 font-semibold uppercase">Căng Thẳng</div>
+                            <div id="dassStress" class="text-base font-bold text-emerald-600 mt-1">Bình thường</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 space-y-1">
+            <p><strong>MindShield AI</strong> - Hệ Thống Hỗ Trợ & Tư Vấn Tâm Lý Học Đường Ẩn Danh</p>
+            <p>© 2026 MindShield AI. Bảo mật thông tin học sinh hàng đầu.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT SYSTEM LOGIC -->
+    <script>
+        // --- 1. TỰ ĐỘNG KHỞI TẠO & LƯỢT TRUY CẬP THỰC TẾ ---
+        let currentStudentCode = "";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Khởi tạo mã học sinh tự động
+            const randomId = Math.floor(10000 + Math.random() * 90000);
+            currentStudentCode = `#HS-${randomId}`;
+
+            // Gán mã học sinh vào các vị trí
+            document.getElementById('headerStudentCode').innerText = currentStudentCode;
+            document.getElementById('chatStudentCode').innerText = currentStudentCode;
+            document.getElementById('bookingStudentCode').value = currentStudentCode;
+            document.getElementById('alertStudentCode').innerText = currentStudentCode;
+
+            // Xử lý đếm lượt truy cập thực tế qua localStorage
+            let visits = parseInt(localStorage.getItem('mindshield_visits') || '0');
+            visits += 1;
+            localStorage.setItem('mindshield_visits', visits.toString());
+
+            document.getElementById('visitCount').innerText = visits.toLocaleString();
+            document.getElementById('dash-access-count').innerText = visits.toLocaleString();
+        });
+
+        // --- 2. CHUYỂN TAB CỦA TRANG WED ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-brand-600', 'bg-brand-50', 'font-semibold');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('text-brand-600', 'bg-brand-50', 'font-semibold');
+                activeBtn.classList.remove('text-slate-600');
+            }
+        }
+
+        // --- 3. PHẦN 1: AI CAMERA & SCAN CẢM XÚC ---
+        let videoStream = null;
+
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const videoEl = document.getElementById('webcam');
+                videoEl.srcObject = videoStream;
+                videoEl.classList.remove('hidden');
+                document.getElementById('cameraPlaceholder').classList.add('hidden');
+                document.getElementById('scanOverlay').classList.remove('hidden');
+                
+                const btnScan = document.getElementById('btnScan');
+                btnScan.disabled = false;
+                btnScan.classList.remove('bg-slate-200', 'text-slate-400');
+                btnScan.classList.add('bg-brand-600', 'hover:bg-brand-700', 'text-white', 'shadow-md');
+            } catch (err) {
+                alert('Không thể mở Camera! Vui lòng cho phép trình duyệt truy cập camera của bạn.');
+            }
+        }
+
+        function analyzeEmotion() {
+            document.getElementById('resultPlaceholder').classList.add('hidden');
+            document.getElementById('resultContent').classList.remove('hidden');
+
+            // Giả lập thuật toán nhận diện ngẫu nhiên
+            const statuses = ['green', 'yellow', 'red'];
+            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
+            const statusBadge = document.getElementById('statusBadge');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusScore = document.getElementById('statusScore');
+            const statusDesc = document.getElementById('statusDesc');
+            const teacherAlertBox = document.getElementById('teacherAlertBox');
+
+            if (randomStatus === 'green') {
+                statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800';
+                statusBadge.innerText = 'Mức Xanh (Tốt)';
+                statusTitle.innerText = 'Trạng thái Bình Thường / Vui Vẻ';
+                statusScore.innerText = '88/100';
+                statusDesc.innerText = 'Tâm trạng của bạn đang ở mức cân bằng tốt. Hãy tiếp tục học tập và duy trì năng lượng tích cực này nhé!';
+                teacherAlertBox.classList.add('hidden');
+            } else if (randomStatus === 'yellow') {
+                statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-800';
+                statusBadge.innerText = 'Mức Vàng (Cần Chú Ý)';
+                statusTitle.innerText = 'Trạng thái Căng Thẳng / Lắng Lo';
+                statusScore.innerText = '58/100';
+                statusDesc.innerText = 'Bạn đang gặp áp lực hoặc có biểu hiện lo âu nhẹ. Hãy dành ít phút tập hít thở 4-7-8 ở Tab Trò Chuyện.';
+                teacherAlertBox.classList.remove('hidden');
+            } else {
+                statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-rose-100 text-rose-800';
+                statusBadge.innerText = 'Mức Đỏ (Báo Báo Cực Cao)';
+                statusTitle.innerText = 'Trạng thái U Uất / Mệt Mỏi Căng Thẳng';
+                statusScore.innerText = '32/100';
+                statusDesc.innerText = 'Chỉ số tâm lý đang ở mức đáng ngại. Hãy trò chuyện ngay với thầy cô tổ tư vấn để được hỗ trợ san sẻ!';
+                teacherAlertBox.classList.remove('hidden');
+            }
+        }
+
+        // --- 4. PHẦN 2: HỘP CHAT VÀ PHÂN QUYỀN HỌC SINH / GIÁO VIÊN ---
+        function setRole(role) {
+            const studentSection = document.getElementById('studentChatSection');
+            const teacherSection = document.getElementById('teacherChatSection');
+            const btnStudent = document.getElementById('roleBtnStudent');
+            const btnTeacher = document.getElementById('roleBtnTeacher');
+
+            if (role === 'student') {
+                studentSection.classList.remove('hidden');
+                teacherSection.classList.add('hidden');
+                btnStudent.className = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm border transition flex items-center gap-2 bg-brand-600 text-white border-brand-600';
+                btnTeacher.className = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm border transition flex items-center gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+            } else {
+                studentSection.classList.add('hidden');
+                teacherSection.classList.remove('hidden');
+                btnTeacher.className = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm border transition flex items-center gap-2 bg-slate-800 text-white border-slate-800';
+                btnStudent.className = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm border transition flex items-center gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+            }
+        }
+
+        function sendStudentMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            const chatBox = document.getElementById('chatMessages');
+            
+            // Tin nhắn của học sinh
+            const userMsg = document.createElement('div');
+            userMsg.className = 'bg-brand-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] ml-auto leading-relaxed';
+            userMsg.innerText = val;
+            chatBox.appendChild(userMsg);
+
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Phản hồi giả lập từ hòm thư tự động
+            setTimeout(() => {
+                const autoReply = document.createElement('div');
+                autoReply.className = 'bg-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none max-w-[80%] leading-relaxed';
+                autoReply.innerText = `[Email Thông Báo] Tin nhắn kèm mã ${currentStudentCode} đã gửi đến tuvantamly@school.edu.vn. Giáo viên sẽ hồi đáp ngay khi nhập mã này!`;
+                chatBox.appendChild(autoReply);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 1000);
+        }
+
+        function loginTeacher() {
+            const name = document.getElementById('teacherName').value.trim();
+            const pass = document.getElementById('teacherPass').value.trim();
+
+            if (!name) {
+                alert('Vui lòng điền tên giáo viên!');
+                return;
+            }
+            if (pass !== '123456') {
+                alert('Mật khẩu không chính xác! (Mật khẩu demo là: 123456)');
+                return;
+            }
+
+            document.getElementById('teacherLoginForm').classList.add('hidden');
+            document.getElementById('teacherWorkArea').classList.remove('hidden');
+            document.getElementById('displayTeacherName').innerText = name;
+        }
+
+        function logoutTeacher() {
+            document.getElementById('teacherLoginForm').classList.remove('hidden');
+            document.getElementById('teacherWorkArea').classList.add('hidden');
+            document.getElementById('teacherPass').value = '';
+        }
+
+        function teacherConnectStudent() {
+            const code = document.getElementById('inputConnectCode').value.trim();
+            if (!code) {
+                alert('Vui lòng điền mã học sinh cần kết nối!');
+                return;
+            }
+
+            const chatDisplay = document.getElementById('teacherChatDisplay');
+            chatDisplay.classList.remove('hidden');
+            chatDisplay.innerHTML += `<div class="p-2 bg-white rounded border border-slate-200 text-slate-700"><strong>Hệ thống:</strong> Đã kết nối với phiên chat ${code}. Bạn có thể bắt đầu tư vấn bảo mật.</div>`;
+        }
+
+        // --- 5. PHẦN 3: LỊCH HẸN ---
+        function submitBooking(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('bookingSuccessAlert');
+            const randomId = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('bookingCodeDisplay').innerText = `#LICH-${randomId}`;
+            alertBox.classList.remove('hidden');
+        }
+
+        // --- 6. PHẦN 5: KIỂM TRA DASS-21 ---
+        function calculateDASS21(e) {
+            e.preventDefault();
+            document.getElementById('dassResult').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
